@@ -141,3 +141,6 @@ cython_debug/
 # IDE folders
 .idea/
 .vscode/
+
+# static
+static/
