@@ -1,3 +1,4 @@
+import django
 import uvicorn
 import asyncio
 import os
@@ -6,20 +7,28 @@ from multiprocessing import Process
 from django.core.asgi import get_asgi_application
 
 from bot.loader import dp
-from bot import middlewares, filters, handlers
 from bot.utils.notify_admins import on_startup_notify
 from bot.utils.set_bot_commands import set_default_commands
 
+# Настройка окружения для настроек
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "webapp.settings")
+django.setup()
+
+# Создаем корутину
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
 
 def run_server():
     app = get_asgi_application()
     config = uvicorn.Config(app=app, loop=loop, port=8001)
     server = uvicorn.Server(config=config)
     asyncio.run(server.serve())
-    
+
 
 async def on_startup(dispatcher):
+    # Подключаем модули бота после установки приложений джанго
+    from bot import middlewares, filters, handlers
     # Устанавливаем дефолтные команды
     await set_default_commands(dispatcher)
 
@@ -32,11 +41,8 @@ def run_bot():
         
 
 if __name__ == '__main__':
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    
     bot = Process(target=run_bot)
     server = Process(target=run_server)
     
-    bot.start()
     server.start()
+    bot.start()
