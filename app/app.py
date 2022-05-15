@@ -33,7 +33,7 @@ async def on_startup(dispatcher):
     await set_default_commands(dispatcher)
 
     # Уведомляет про запуск
-    await on_startup_notify(dispatcher)
+    # await on_startup_notify(dispatcher)
 
 
 def run_bot():
@@ -44,5 +44,5 @@ if __name__ == '__main__':
     bot = Process(target=run_bot)
     server = Process(target=run_server)
     
-    server.start()
+    # server.start()
     bot.start()

@@ -1,9 +1,10 @@
 from aiogram import types
 from aiogram.dispatcher.filters.builtin import CommandStart
-from asgiref.sync import sync_to_async
-from django.contrib.auth.models import User
+# from asgiref.sync import sync_to_async
+# from django.contrib.auth.models import User
 
 from bot.loader import dp
+# from loader import dp
 
 
 @dp.message_handler(CommandStart())
