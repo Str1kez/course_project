@@ -3,7 +3,7 @@ from typing import List
 
 from aiogram.types import LabeledPrice
 
-from data.config import PROVIDER_TOKEN
+from bot.data.config import PROVIDER_TOKEN
 
 
 @dataclass

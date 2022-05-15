@@ -1,9 +1,8 @@
 from aiogram import types
-from aiogram.types import LabeledPrice, SuccessfulPayment, Message
+from aiogram.types import LabeledPrice, Message, ContentType
 
-from data.items import Item
-from data.shipping_methods import REGULAR_SHIPPING, FAST_SHIPPING_DEFAULT, PICKUP_SHIPPING, FAST_SHIPPING_BOX
-# from loader import dp, bot
+from bot.data.items import Item
+from bot.data.shipping_methods import REGULAR_SHIPPING, FAST_SHIPPING_DEFAULT, PICKUP_SHIPPING, FAST_SHIPPING_BOX
 
 
 from bot.loader import dp, bot
@@ -13,25 +12,21 @@ from bot.loader import dp, bot
 async def get_catalog(message: types.Message):
     porshe = Item(title='Поршик',
                   description='Good car',
-                  payload='anything',
+                  payload='porshe_911',
                   currency='RUB',
                   prices=[LabeledPrice('BOMJ', 400_00)],
-                  photo_url='https://avatars.mds.yandex.net/get-verba/787013/2a000001675ec26d44c5fc838f55f253d508/cattouchret',
-                  need_name=True,
-                  need_phone_number=True)
+                  photo_url='https://avatars.mds.yandex.net/get-verba/787013/2a000001675ec26d44c5fc838f55f253d508/cattouchret')
     await bot.send_invoice(chat_id=message.from_user.id, **porshe.__dict__)
     lamba = Item(title='Ламба',
                  description='Good car',
-                 payload='anything',
+                 payload='lamborghini_veneno',
                  currency='RUB',
                  prices=[LabeledPrice('BOMJ', 300_00)],
-                 need_name=True,
-                 photo_url='',
-                 need_phone_number=True)
+                 photo_url='')
     await bot.send_invoice(chat_id=message.from_user.id, **lamba.__dict__)
 
 
-@dp.shipping_query_handler
+@dp.shipping_query_handler()
 async def get_shipping_options(query: types.ShippingQuery):
     if query.shipping_address.country_code == 'RU':
         await bot.answer_shipping_query(shipping_query_id=query.id,
@@ -44,7 +39,7 @@ async def get_shipping_options(query: types.ShippingQuery):
                                         error_message='Работаем пока только по России')
 
 
-@dp.pre_checkout_query_handler
+@dp.pre_checkout_query_handler()
 async def make_payment(query: types.ShippingQuery):
     # ! Здесь идет бронирование товара
     await bot.answer_pre_checkout_query(pre_checkout_query_id=query.id, ok=True)
@@ -54,13 +49,11 @@ async def make_payment(query: types.ShippingQuery):
     # 1111 1111 1111 1026, 12/22, CVC 000
 
 
-@dp.message_handler(content_types=SuccessfulPayment)
+@dp.message_handler(content_types=ContentType.SUCCESSFUL_PAYMENT)
 async def check_payment(message: Message):
+    print(message)
     print(message.successful_payment.currency)
-    print(message.successful_payment.total_amount)
+    print(message.successful_payment.total_amount / 100)
     print(message.successful_payment.invoice_payload)
     print(message.successful_payment.shipping_option_id)
     print(message.successful_payment.order_info)
-# @dp.register_pre_checkout_query_handler
-# async def confirm_payment(query: types.ShippingQuery):
-#     await bot.send_message(query.from_user.id, query)

@@ -1,6 +1,6 @@
 from aiogram.types import Message, ContentType
 
-from data.config import ADMINS
+from bot.data.config import ADMINS
 from bot.loader import dp
 # from loader import dp
 
