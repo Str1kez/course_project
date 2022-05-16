@@ -5,7 +5,7 @@ from django.db import models
 
 class TgUser(models.Model):
     user_id = models.fields.BigIntegerField(primary_key=True)
-    username = models.fields.CharField(blank=False, null=False, verbose_name='Ник пользователя')
+    username = models.fields.CharField(max_length=50, blank=False, null=False, verbose_name='Ник пользователя')
     created_at = models.fields.DateTimeField(auto_now_add=True, verbose_name='Зарегистрирован')
 
     class Meta:
@@ -33,7 +33,7 @@ class Subcategory(models.Model):
 
     class Meta:
         verbose_name = 'Подкатегория'
-        verbose_name_pluaral = 'Подкатегории'
+        verbose_name_plural = 'Подкатегории'
 
     def __str__(self) -> str:
         return self.title
@@ -42,6 +42,7 @@ class Subcategory(models.Model):
 class Item(models.Model):
     title = models.fields.CharField(max_length=100, blank=False, verbose_name='Название')
     description = models.fields.CharField(max_length=255, verbose_name='Описание')
+    subcategory = models.ForeignKey(Subcategory, on_delete=models.SET('deleted_subcategory'), verbose_name='Подкатегория')
     currency = models.fields.CharField(max_length=3, verbose_name='Валюта')
     price = models.fields.DecimalField(max_digits=8, decimal_places=2, verbose_name='Цена')
     photo_url = models.fields.URLField(verbose_name='URL Изображения', null=True)

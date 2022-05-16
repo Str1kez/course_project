@@ -44,5 +44,5 @@ if __name__ == '__main__':
     bot = Process(target=run_bot)
     server = Process(target=run_server)
     
-    # server.start()
-    bot.start()
+    server.start()
+    # bot.start()
