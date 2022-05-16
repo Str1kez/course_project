@@ -14,6 +14,29 @@ class TgUser(models.Model):
 
     def __str__(self):
         return self.username
+    
+    
+class Category(models.Model):
+    title = models.fields.CharField(max_length=50, verbose_name='Название')
+
+    class Meta:
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
+        
+    def __str__(self) -> str:
+        return self.title
+
+
+class Subcategory(models.Model):
+    title = models.fields.CharField(max_length=50, verbose_name='Название')
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name='Категория')
+
+    class Meta:
+        verbose_name = 'Подкатегория'
+        verbose_name_pluaral = 'Подкатегории'
+
+    def __str__(self) -> str:
+        return self.title
 
 
 class Item(models.Model):
@@ -49,7 +72,7 @@ class ShippingOption(models.Model):
 class Order(models.Model):
     user = models.ForeignKey(TgUser, on_delete=models.SET('deleted_user'), verbose_name='Пользователь')
     item = models.ForeignKey(Item, on_delete=models.SET('deleted_item'), verbose_name='Товар')
-    shipping_option = models.ForeignKey(ShippingOption, on_delete=models.SET_NULL, verbose_name='Тип доставки')
+    shipping_option = models.ForeignKey(ShippingOption, on_delete=models.SET_NULL, verbose_name='Тип доставки', null=True)
     shipping_address = models.JSONField(verbose_name='Адрес доставки', null=True)
     mobile_phone = models.fields.CharField(max_length=20, null=True, verbose_name='Телефон')
     receiver_name = models.fields.CharField(max_length=100, null=True, verbose_name='Данные получателя')
