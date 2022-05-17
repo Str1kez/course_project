@@ -12,6 +12,7 @@ from bot.utils.set_bot_commands import set_default_commands
 
 # Настройка окружения для настроек
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "webapp.settings")
+os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 # Создаем корутину
@@ -45,4 +46,4 @@ if __name__ == '__main__':
     server = Process(target=run_server)
     
     server.start()
-    # bot.start()
+    bot.start()
