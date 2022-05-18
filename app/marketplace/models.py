@@ -17,7 +17,7 @@ class TgUser(models.Model):
     
     
 class Category(models.Model):
-    title = models.fields.CharField(max_length=50, verbose_name='Название')
+    title = models.fields.CharField(max_length=50, unique=True, verbose_name='Название')
 
     class Meta:
         verbose_name = 'Категория'
@@ -45,7 +45,7 @@ class Item(models.Model):
     subcategory = models.ForeignKey(Subcategory, on_delete=models.SET('deleted_subcategory'), verbose_name='Подкатегория')
     currency = models.fields.CharField(max_length=3, verbose_name='Валюта')
     price = models.fields.DecimalField(max_digits=8, decimal_places=2, verbose_name='Цена')
-    photo_url = models.fields.URLField(verbose_name='URL Изображения', null=True)
+    photo_url = models.fields.URLField(verbose_name='URL Изображения', null=True, blank=True)
     can_be_shipped = models.fields.BooleanField(verbose_name='Есть ли доставка', default=True)
     is_flexible = models.fields.BooleanField(verbose_name='Плавающая цена', default=True)
 
