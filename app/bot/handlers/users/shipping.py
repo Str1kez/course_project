@@ -1,39 +1,42 @@
-from typing import Union
+from decimal import Decimal
 
 from aiogram import types
-from aiogram.types import LabeledPrice, Message, ContentType
+from aiogram.types import LabeledPrice, Message, ContentType, ShippingOption
+from asgiref.sync import sync_to_async
 
-from bot.data.items import Item
-from bot.data.shipping_methods import REGULAR_SHIPPING, FAST_SHIPPING_DEFAULT, PICKUP_SHIPPING, FAST_SHIPPING_BOX
-
-
+from marketplace.models import Item, TgUser, Order, ShippingOption as ShippingOptionDB
 from bot.loader import dp, bot
 
 
-async def get_catalog_test(message: types.Message):
-    porshe = Item(title='Поршик',
-                  description='Good car',
-                  payload='porshe_911',
-                  currency='RUB',
-                  prices=[LabeledPrice('BOMJ', 400_00)],
-                  photo_url='https://avatars.mds.yandex.net/get-verba/787013/2a000001675ec26d44c5fc838f55f253d508/cattouchret')
-    await bot.send_invoice(chat_id=message.from_user.id, **porshe.__dict__)
-    lamba = Item(title='Ламба',
-                 description='Good car',
-                 payload='lamborghini_veneno',
-                 currency='RUB',
-                 prices=[LabeledPrice('BOMJ', 300_00)],
-                 photo_url='')
-    await bot.send_invoice(chat_id=message.from_user.id, **lamba.__dict__)
+async def get_shipping_options():
+    options = await sync_to_async(ShippingOptionDB.objects.all)()
+    return [ShippingOption(id=str(opt.id),
+                           title=opt.title,
+                           prices=[LabeledPrice(opt.type, int(opt.price * 100))]) for opt in options]
+
+
+async def get_user_or_create(user_id: int, username: str):
+    try:
+        user = await sync_to_async(TgUser.objects.get)(user_id=user_id)
+    except TgUser.DoesNotExist:
+        user = TgUser(user_id=user_id, username=username)
+        await sync_to_async(user.save)()
+
+    return user
 
 
 @dp.shipping_query_handler()
-async def get_shipping_options(query: types.ShippingQuery):
+async def shipping(query: types.ShippingQuery):
     if query.shipping_address.country_code == 'RU':
-        await bot.answer_shipping_query(shipping_query_id=query.id,
-                                        ok=True,
-                                        shipping_options=[REGULAR_SHIPPING, FAST_SHIPPING_DEFAULT,
-                                                          FAST_SHIPPING_BOX, PICKUP_SHIPPING])
+        item = await sync_to_async(Item.objects.get)(id=int(query.invoice_payload))
+        if item.can_be_shipped:
+            await bot.answer_shipping_query(shipping_query_id=query.id,
+                                            ok=True,
+                                            shipping_options=await get_shipping_options())
+        else:
+            await bot.answer_shipping_query(shipping_query_id=query.id, ok=True,
+                                            shipping_options=[
+                                                ShippingOption('0', 'Не доставляется', [LabeledPrice('Доставка', 0)])])
     else:
         await bot.answer_shipping_query(shipping_query_id=query.id,
                                         ok=False,
@@ -43,18 +46,41 @@ async def get_shipping_options(query: types.ShippingQuery):
 @dp.pre_checkout_query_handler()
 async def make_payment(query: types.ShippingQuery):
     # ! Здесь идет бронирование товара
-    await bot.answer_pre_checkout_query(pre_checkout_query_id=query.id, ok=True)
+    item = await sync_to_async(Item.objects.get)(id=int(query.invoice_payload))
     # Если есть товар, иначе отправим ok=False с объяснением
-    # await bot.answer_pre_checkout_query(pre_checkout_query_id=query.id, ok=False,
-    #                                     error_message='Данный товар закончился :(')
+    if item.amount > 0:
+        await bot.answer_pre_checkout_query(pre_checkout_query_id=query.id, ok=True)
+    else:
+        await bot.answer_pre_checkout_query(pre_checkout_query_id=query.id, ok=False,
+                                            error_message='Данный товар закончился :(')
     # 1111 1111 1111 1026, 12/22, CVC 000
 
 
 @dp.message_handler(content_types=ContentType.SUCCESSFUL_PAYMENT)
 async def check_payment(message: Message):
-    print(message)
-    print(message.successful_payment.currency)
-    print(message.successful_payment.total_amount / 100)
-    print(message.successful_payment.invoice_payload)
-    print(message.successful_payment.shipping_option_id)
-    print(message.successful_payment.order_info)
+    can_be_shipped = message.successful_payment.shipping_option_id != '0'
+    user = await get_user_or_create(message.from_user.id, message.from_user.username)
+    item = await sync_to_async(Item.objects.get)(id=int(message.successful_payment.invoice_payload))
+    shipping_option = None
+    if can_be_shipped:
+        shipping_option = await sync_to_async(ShippingOptionDB.objects.get)(id=int(message.
+                                                                                   successful_payment.
+                                                                                   shipping_option_id))
+
+    shipping_address = message.successful_payment.order_info.shipping_address.as_json() if can_be_shipped else None
+    mobile_phone = message.successful_payment.order_info.phone_number if can_be_shipped else None
+    receiver_name = message.successful_payment.order_info.name if can_be_shipped else None
+    total_amount = message.successful_payment.total_amount / 100
+
+    successful_order = Order(user=user,
+                             item=item,
+                             shipping_option=shipping_option,
+                             shipping_address=shipping_address,
+                             mobile_phone=mobile_phone,
+                             receiver_name=receiver_name,
+                             total_amount=total_amount)
+
+    item.amount -= 1
+    await sync_to_async(item.save)()
+    await sync_to_async(successful_order.save)()
+    await message.answer(f'Спасибо за покупку\n{item.title}')

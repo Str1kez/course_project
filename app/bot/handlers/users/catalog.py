@@ -1,10 +1,12 @@
 from typing import Union
 
 from aiogram import types
-
+from aiogram.types import LabeledPrice
+from aiogram.utils.exceptions import MessageCantBeEdited
 
 from bot.loader import dp, bot
 import bot.keyboards.inline as inline_keyboard
+from bot.data.items import Item
 
 
 @dp.message_handler(commands=['catalog'])
@@ -27,13 +29,28 @@ async def get_subcategories(call: types.CallbackQuery, category_id: str, **kwarg
 
 async def get_items(call: types.CallbackQuery, category_id: str, subcategory_id: str, **kwargs):
     keyboard = await inline_keyboard.items_keyboard(category_id, subcategory_id)
-    await call.message.edit_text(text='Выбери товар', reply_markup=keyboard)
+    try:
+        await call.message.edit_text(text='Выбери товар', reply_markup=keyboard)
+    except MessageCantBeEdited:
+        await call.message.delete()
+        await bot.send_message(call.from_user.id, text='Выбери товар', reply_markup=keyboard)
 
 
 async def get_detailed_item(call: types.CallbackQuery, category_id: str, subcategory_id: str, item_id: str):
-    keyboard = await inline_keyboard.detailed_item_keyboard(category_id, subcategory_id, item_id)
-    # удаляем сообщение и запускаем процесс оформления заказа
-    await call.message.edit_text('НАДО СДЕЛАТЬ', reply_markup=keyboard)
+    keyboard, item_db = await inline_keyboard.detailed_item_keyboard(category_id, subcategory_id, item_id)
+    item = Item(title=item_db.title,
+                description=item_db.description,
+                payload=str(item_db.id),
+                currency=item_db.currency,
+                prices=[LabeledPrice(item_db.title, int(item_db.price * 100))],
+                photo_url=item_db.photo_url,
+                is_flexible=item_db.is_flexible,
+                need_name=item_db.can_be_shipped,
+                need_shipping_address=item_db.can_be_shipped,
+                need_phone_number=item_db.can_be_shipped)
+
+    await call.message.delete()
+    await bot.send_invoice(chat_id=call.from_user.id, **item.__dict__, reply_markup=keyboard)
 
 
 @dp.callback_query_handler(inline_keyboard.category_callback.filter())
