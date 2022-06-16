@@ -3,6 +3,6 @@
 # from .is_admin import AdminFilter
 
 
-if __name__ == "filters":
+if __name__ == "bot.filters":
     # dp.filters_factory.bind(AppAdminFilter)
     pass
