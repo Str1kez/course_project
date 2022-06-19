@@ -1,0 +1,9 @@
+services:
+  marketplace_tg:
+    build: .
+    ports:
+      - "127.0.0.1:80:8001"
+    volumes:
+      - '/var/run/postgresql:/var/run/postgresql'
+    env_file:
+      - .env

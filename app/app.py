@@ -22,7 +22,8 @@ asyncio.set_event_loop(loop)
 
 def run_server():
     app = get_asgi_application()
-    config = uvicorn.Config(app=app, loop=loop, port=8001)
+    # Конфиг для докера, иначе * убрать хост *
+    config = uvicorn.Config(app=app, loop=loop, port=8001, host='0.0.0.0')
     server = uvicorn.Server(config=config)
     asyncio.run(server.serve())
 
