@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'mptt',
     'marketplace',
     'bot',
 ]
@@ -81,12 +82,14 @@ WSGI_APPLICATION = 'webapp.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'HOST': env.str('PGHOST'),
-        'PORT': env.str('PGPORT'),
-        'NAME': env.str('PGDBNAME'),
-        'USER': env.str('PGUSER'),
-        'PASSWORD': env.str('PGPASSWORD')
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'D:\\course_work\\code\\db.sqlite3',
+        # 'ENGINE': 'django.db.backends.postgresql',
+        # 'HOST': env.str('PGHOST'),
+        # 'PORT': env.str('PGPORT'),
+        # 'NAME': env.str('PGDBNAME'),
+        # 'USER': env.str('PGUSER'),
+        # 'PASSWORD': env.str('PGPASSWORD')
     }
 }
 

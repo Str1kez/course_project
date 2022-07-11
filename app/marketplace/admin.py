@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin import display
+from mptt.admin import DraggableMPTTAdmin, ModelAdmin as MPTTAdmin
 
-from .models import TgUser, Category, Subcategory, Item, ShippingOption, Order
+from .models import TgUser, Category, Item, ShippingOption, Order
 # Register your models here.
 
 
@@ -13,28 +14,16 @@ class TgUserAdmin(admin.ModelAdmin):
     ordering = 'username',
 
 
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = 'title',
+class CategoryDraggableMPTTAdmin(DraggableMPTTAdmin):
+    list_display = 'tree_actions', 'indented_title'
     search_fields = 'title',
-    ordering = 'title',
 
 
-class SubcategoryAdmin(admin.ModelAdmin):
-    list_display = 'title', 'category'
-    search_fields = 'title', 'category__title'
-    list_editable = 'category',
-    ordering = 'category__title', 'title'
-
-
-class ItemAdmin(admin.ModelAdmin):
-    list_display = 'title', 'price', 'subcategory', 'get_category', 'can_be_shipped', 'is_flexible'
-    search_fields = 'title', 'subcategory__title'
-    list_editable = 'price', 'subcategory', 'can_be_shipped', 'is_flexible'
-    ordering = 'title', 'subcategory__title'
-
-    @display(ordering='subcategory__category', description='Категория')
-    def get_category(self, obj):
-        return obj.subcategory.category
+class ItemMPTTAdmin(MPTTAdmin):
+    list_display = 'title', 'price', 'parent', 'can_be_shipped', 'is_flexible'
+    search_fields = 'title', 'parent__title'
+    list_editable = 'price', 'parent', 'can_be_shipped', 'is_flexible'
+    ordering = 'title', 'parent__title'
 
 
 class ShippingOptionAdmin(admin.ModelAdmin):
@@ -59,8 +48,7 @@ class OrderAdmin(admin.ModelAdmin):
 
 
 admin.site.register(TgUser, TgUserAdmin)
-admin.site.register(Category, CategoryAdmin)
-admin.site.register(Subcategory, SubcategoryAdmin)
-admin.site.register(Item, ItemAdmin)
+admin.site.register(Category, CategoryDraggableMPTTAdmin)
+admin.site.register(Item, ItemMPTTAdmin)
 admin.site.register(ShippingOption, ShippingOptionAdmin)
 admin.site.register(Order, OrderAdmin)

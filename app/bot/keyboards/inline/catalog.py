@@ -2,7 +2,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from asgiref.sync import sync_to_async
 from django.db.models import Count, Sum
 
-from marketplace.models import Category, Subcategory, Item
+from marketplace.models import Category, Item
 from .callbacks import get_callback_data
 
 
