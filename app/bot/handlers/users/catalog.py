@@ -27,8 +27,8 @@ async def get_subcategories(call: types.CallbackQuery, category_id: str, **kwarg
     await call.message.edit_text(text='Выбери подкатегорию', reply_markup=keyboard)
 
 
-async def get_items(call: types.CallbackQuery, category_id: str, subcategory_id: str, **kwargs):
-    keyboard = await inline_keyboard.items_keyboard(category_id, subcategory_id)
+async def get_items(call: types.CallbackQuery, category_id: str, **kwargs):
+    keyboard = await inline_keyboard.items_keyboard(category_id)
     try:
         await call.message.edit_text(text='Выбери товар', reply_markup=keyboard)
     except MessageCantBeEdited:
@@ -36,8 +36,8 @@ async def get_items(call: types.CallbackQuery, category_id: str, subcategory_id:
         await bot.send_message(call.from_user.id, text='Выбери товар', reply_markup=keyboard)
 
 
-async def get_detailed_item(call: types.CallbackQuery, category_id: str, subcategory_id: str, item_id: str):
-    keyboard, item_db = await inline_keyboard.detailed_item_keyboard(category_id, subcategory_id, item_id)
+async def get_detailed_item(call: types.CallbackQuery, item_id: str, **kwargs):
+    keyboard, item_db = await inline_keyboard.detailed_item_keyboard(item_id)
     item = Item(title=item_db.title,
                 description=item_db.description,
                 payload=str(item_db.id),
@@ -57,7 +57,6 @@ async def get_detailed_item(call: types.CallbackQuery, category_id: str, subcate
 async def all_queries_handler(call: types.CallbackQuery, callback_data: dict):
     stage = int(callback_data.get('stage'))
     category_id = callback_data.get('category_id')
-    subcategory_id = callback_data.get('subcategory_id')
     item_id = callback_data.get('item_id')
 
     func_list = [get_categories, get_subcategories, get_items, get_detailed_item]
@@ -66,5 +65,4 @@ async def all_queries_handler(call: types.CallbackQuery, callback_data: dict):
 
     await on_stage_func(call,
                         category_id=category_id,
-                        subcategory_id=subcategory_id,
                         item_id=item_id)

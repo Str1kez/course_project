@@ -3,12 +3,14 @@ from asgiref.sync import sync_to_async
 from django.db.models import Count, Sum
 
 from marketplace.models import Category, Item
+from bot.utils.misc.logging import error_logger
 from .callbacks import get_callback_data
+from .custom_buttons import get_back_button
 
 
 async def category_keyboard():
     stage = 0
-    categories = await sync_to_async(Category.objects.alias(non_empty=Count('subcategory')).filter)(non_empty__gt=0)
+    categories = await sync_to_async(Category.objects.alias(non_empty=Count('children')).filter)(non_empty__gt=0, level=0)
 
     keyboard = InlineKeyboardMarkup()
     for cat in categories:
@@ -21,48 +23,49 @@ async def category_keyboard():
 async def subcategory_keyboard(category_id: str):
     stage = 1
     category = await sync_to_async(Category.objects.get)(id=int(category_id))
-    subcategories = await sync_to_async(category.subcategory_set.
-                                        alias(non_empty=Sum('item__amount')).filter)(non_empty__gt=0)
-
+    subcategories = await sync_to_async(category.get_children)()
+    items_in_category = category.item_set.exists()
+    is_leaf_level = all((cat.is_leaf_node() for cat in subcategories)) and not items_in_category
     keyboard = InlineKeyboardMarkup()
+
+    if is_leaf_level:
+        subcategories = await sync_to_async(subcategories.alias(non_empty=Sum('item__amount')).filter)(non_empty__gt=0)
+    else:
+        if items_in_category:
+            error_logger.error('Error in hierarchy of orders and categories: CATEGORY ' + str(category))
+        subcategories = await sync_to_async(subcategories.alias(non_empty=Count('children')).filter)(non_empty__gt=0)
+
     for subcat in subcategories:
-        callback_data = get_callback_data(stage=stage + 1, category_id=category_id, subcategory_id=str(subcat.id))
+        callback_data = get_callback_data(stage=stage + is_leaf_level, category_id=str(subcat.id))
         keyboard.insert(InlineKeyboardButton(text=str(subcat), callback_data=callback_data))
 
-    callback_data = get_callback_data(stage=stage - 1)
-    keyboard.row(
-        InlineKeyboardButton(text='Назад', callback_data=callback_data)
-    )
+    keyboard.row(get_back_button(category=category, stage=stage))
 
     return keyboard
 
 
-async def items_keyboard(category_id: str, subcategory_id: str):
+async def items_keyboard(category_id: str):
     stage = 2
-    items = await sync_to_async(Subcategory.objects.get(id=int(subcategory_id)).item_set.filter)(amount__gt=0)
+    category = await sync_to_async(Category.objects.get)(id=int(category_id))
+    items = await sync_to_async(category.item_set.filter)(amount__gt=0)
 
     keyboard = InlineKeyboardMarkup()
     for item in items:
         callback_data = get_callback_data(stage=stage + 1, category_id=category_id,
-                                          subcategory_id=subcategory_id, item_id=str(item.id))
+                                          item_id=str(item.id))
         keyboard.insert(InlineKeyboardButton(text=str(item), callback_data=callback_data))
 
-    callback_data = get_callback_data(stage=stage - 1, category_id=category_id)
-    keyboard.row(
-        InlineKeyboardButton(text='Назад', callback_data=callback_data)
-    )
+    keyboard.row(get_back_button(category=category, stage=stage))
 
     return keyboard
 
 
-async def detailed_item_keyboard(category_id: str, subcategory_id: str, item_id: str = '0'):
+async def detailed_item_keyboard(item_id: str = '0'):
     stage = 3
     keyboard = InlineKeyboardMarkup()
     item = await sync_to_async(Item.objects.get)(id=int(item_id))
     keyboard.insert(InlineKeyboardButton(text=f'Заплатить {item.price} {item.currency}', pay=True))
-    callback_data = get_callback_data(stage=stage - 1, category_id=category_id, subcategory_id=subcategory_id)
-    keyboard.row(
-        InlineKeyboardButton(text='Назад', callback_data=callback_data)
-    )
+
+    keyboard.row(get_back_button(category=item, stage=stage))
 
     return keyboard, item

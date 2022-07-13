@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin import display
+from django.db import models
+from django_json_widget.widgets import JSONEditorWidget
 from mptt.admin import DraggableMPTTAdmin, ModelAdmin as MPTTAdmin
 
 from .models import TgUser, Category, Item, ShippingOption, Order
@@ -37,6 +39,11 @@ class OrderAdmin(admin.ModelAdmin):
     ordering = '-created_at',
     readonly_fields = 'user', 'item', 'shipping_option', 'shipping_address', 'mobile_phone', 'receiver_name', \
                       'total_amount', 'created_at'
+
+    # Должно красиво отображать json данные с адресом
+    formfield_overrides = {
+        models.JSONField: {'widget': JSONEditorWidget},
+    }
 
     @display(description='Товар')
     def get_item(self, obj):
