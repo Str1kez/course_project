@@ -4,3 +4,5 @@
 **/__pycache__
 post_payment_response.json
 /logs
+/static
+**/migrations
