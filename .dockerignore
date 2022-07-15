@@ -1,8 +1,9 @@
 /.idea
 /venv
-.env
 **/__pycache__
 post_payment_response.json
-/logs
-/static
+**/static
 **/migrations
+*.log
+.env
+.env.dist

@@ -20,4 +20,7 @@ WORKDIR /project
 
 COPY . .
 
-CMD [ "python3", "./app/app.py" ]
+WORKDIR /project/app
+
+# это переопределено в docker-compose, так как нужна статика и миграции
+CMD [ "python3", "app.py" ]

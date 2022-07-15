@@ -1,6 +1,10 @@
 services:
   marketplace_tg:
     build: .
+    command: sh -c "python3 manage.py makemigrations marketplace;
+                    python3 manage.py migrate;
+                    python3 manage.py collectstatic --noinput;
+                    python3 app.py"
     ports:
       - "127.0.0.1:80:8001"
     volumes:
