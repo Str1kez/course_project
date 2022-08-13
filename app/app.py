@@ -41,11 +41,15 @@ async def on_startup(dispatcher):
 
 def run_bot():
     executor.start_polling(dp, on_startup=on_startup, skip_updates=True)
-        
 
-if __name__ == '__main__':
+
+def main():
     bot = Process(target=run_bot)
     server = Process(target=run_server)
     
     server.start()
     bot.start()
+        
+
+if __name__ == '__main__':
+    main()

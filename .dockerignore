@@ -4,6 +4,5 @@
 post_payment_response.json
 **/static
 **/migrations
-*.log
-.env
-.env.dist
+**/*.log
+**/.env*

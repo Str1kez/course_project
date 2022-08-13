@@ -1,14 +1,21 @@
 services:
-  marketplace_tg:
+  marketplace:
     build: .
     command: sh -c "python3 manage.py makemigrations marketplace;
                     python3 manage.py migrate;
                     python3 manage.py collectstatic --noinput;
                     python3 app.py"
     ports:
-      - "192.168.1.3:80:8001"
-      - "127.0.0.1:80:8001"
-    volumes:
-      - '/var/run/postgresql:/var/run/postgresql'
+      # - 192.168.1.3:80:8001
+      - 8001:8001
     env_file:
       - .env
+    depends_on:
+      - db
+  db:
+    image: postgres
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - 5433:5432

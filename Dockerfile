@@ -1,3 +1,13 @@
+FROM python:3.10.5-slim as requirements
+
+WORKDIR /temp
+
+COPY pyproject.toml poetry.lock* /temp/
+
+RUN pip install poetry
+
+RUN poetry export -o requirements.txt --without-hashes
+
 # Отвечает за создание среды
 FROM python:3.10.5-slim as builder
 
@@ -7,10 +17,6 @@ RUN apt-get update; \
             libc-dev \
             gcc;
 
-COPY requirements.txt requirements.txt
-
-RUN python3     -m pip install --upgrade pip; \
-    pip3 install -r requirements.txt
 
 # Отвечает за создание приложения
 
@@ -18,7 +24,18 @@ FROM builder AS build_app
 
 WORKDIR /project
 
-COPY . .
+COPY --from=requirements /temp/requirements.txt requirements.txt
+
+ENV PYTHONUNBUFFERED=1
+
+ENV PYTHONDONTWRITEBYTECODE=1
+
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
+
+COPY ./app ./app
+
+RUN mkdir logs; \
+    mkdir logs/app
 
 WORKDIR /project/app
 

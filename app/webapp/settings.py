@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 import os.path
+import dj_database_url
 from environs import Env
 from pathlib import Path
 
@@ -29,7 +30,7 @@ SECRET_KEY = env.str('DJANGO_SECRET')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["192.168.1.3", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -81,18 +82,19 @@ WSGI_APPLICATION = 'webapp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        # 'ENGINE': 'django.db.backends.sqlite3',
-        # 'NAME': os.path.join(BASE_DIR.parent, 'db.sqlite3')
-        'ENGINE': 'django.db.backends.postgresql',
-        'HOST': env.str('PGHOST'),
-        'PORT': env.str('PGPORT'),
-        'NAME': env.str('PGDBNAME'),
-        'USER': env.str('PGUSER'),
-        'PASSWORD': env.str('PGPASSWORD')
-    }
-}
+# DATABASES = {
+    # 'default': {
+        # 'ENGINE': 'django.db.backends.postgresql',
+        # 'HOST': env.str('PGHOST'),
+        # 'PORT': env.str('PGPORT'),
+        # 'NAME': env.str('PGDBNAME'),
+        # 'USER': env.str('PGUSER'),
+        # 'PASSWORD': env.str('PGPASSWORD')
+    # }
+# }
+
+DATABASES = {'default': dj_database_url.config(default=env.str('DB_URL'))}
+# print(DATABASES['default'])
 
 
 # Password validation
