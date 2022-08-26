@@ -13,9 +13,9 @@ FROM python:3.10.5-slim as builder
 
 RUN apt-get update; \
     apt-get install -y --no-install-recommends \ 
-            libpq-dev \
-            libc-dev \
-            gcc;
+    libpq-dev \
+    libc-dev \
+    gcc;
 
 
 # Отвечает за создание приложения
@@ -36,6 +36,8 @@ COPY ./app ./app
 
 RUN mkdir logs; \
     mkdir logs/app
+
+COPY marketplace_dump.json .
 
 WORKDIR /project/app
 
