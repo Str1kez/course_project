@@ -31,7 +31,7 @@ async def send_dummy_query(query: types.InlineQuery) -> None:
 @rate_limit(1, key='inline')
 @dp.inline_handler()
 async def item_searching(query: types.InlineQuery):
-    items = await sync_to_async(ItemDB.objects.filter)(title__icontains=query.query)
+    items = await sync_to_async(ItemDB.objects.filter)(title__icontains=query.query, amount__gt=0)
 
     if not items.exists():
         return await send_dummy_query(query)
