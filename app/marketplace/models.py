@@ -18,7 +18,7 @@ class TgUser(models.Model):
 
 
 class Category(MPTTModel):
-    title = models.fields.CharField(max_length=50, unique=True, verbose_name='Название')
+    title = models.fields.CharField(max_length=50, verbose_name='Название')
     parent = TreeForeignKey('self', on_delete=models.CASCADE, related_name='children', verbose_name='Подкатегория',
                             null=True, blank=True)
 

@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from asgiref.sync import sync_to_async
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Q
 
 from marketplace.models import Category, Item
 from bot.utils.misc.logging import error_logger
@@ -33,10 +33,12 @@ async def subcategory_keyboard(category_id: str):
     else:
         if items_in_category:
             error_logger.error('Error in hierarchy of orders and categories: CATEGORY ' + str(category))
-        subcategories = await sync_to_async(subcategories.alias(non_empty=Count('children')).filter)(non_empty__gt=0)
+        subcategories = await sync_to_async(subcategories.alias(ne_children=Count('children'),
+                                                                ne_items=Count('item__amount'))
+                                            .filter)(Q(ne_children__gt=0) | Q(ne_items__gt=0))
 
     for subcat in subcategories:
-        callback_data = get_callback_data(stage=stage + is_leaf_level, category_id=str(subcat.id))
+        callback_data = get_callback_data(stage=stage + subcat.is_leaf_node(), category_id=str(subcat.id))
         keyboard.insert(InlineKeyboardButton(text=str(subcat), callback_data=callback_data))
 
     keyboard.row(get_back_button(category=category, stage=stage))
