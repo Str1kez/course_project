@@ -48,6 +48,7 @@ async def make_payment(query: types.ShippingQuery):
     # ! Здесь идет бронирование товара
     item = await sync_to_async(Item.objects.get)(id=int(query.invoice_payload))
     # Если есть товар, иначе отправим ok=False с объяснением
+    # TODO: Возможно здесь нужно реализовать транзакцию на кол-во товара
     if item.amount > 0:
         await bot.answer_pre_checkout_query(pre_checkout_query_id=query.id, ok=True)
     else:
@@ -70,7 +71,7 @@ async def check_payment(message: Message):
     shipping_address = message.successful_payment.order_info.shipping_address.as_json() if can_be_shipped else None
     mobile_phone = message.successful_payment.order_info.phone_number if can_be_shipped else None
     receiver_name = message.successful_payment.order_info.name if can_be_shipped else None
-    total_amount = message.successful_payment.total_amount / 100
+    total_amount = message.successful_payment.total_amount / 100  # TODO: decimal?
 
     successful_order = Order(user=user,
                              item=item,
@@ -80,7 +81,7 @@ async def check_payment(message: Message):
                              receiver_name=receiver_name,
                              total_amount=total_amount)
 
-    item.amount -= 1
+    item.amount -= 1  # TODO: FIX
     await sync_to_async(item.save)()
     await sync_to_async(successful_order.save)()
     await message.answer(f'Спасибо за покупку\n{item.title}')
