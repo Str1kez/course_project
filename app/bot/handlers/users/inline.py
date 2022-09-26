@@ -1,6 +1,10 @@
+import re
+
 from aiogram import types
 from aiogram.types import LabeledPrice
 from asgiref.sync import sync_to_async
+from django.db.models import Q
+
 from marketplace.models import Item as ItemDB
 
 from bot.data.items import Item
@@ -22,17 +26,38 @@ def create_item(item: ItemDB) -> Item:
 
 
 async def send_dummy_query(query: types.InlineQuery) -> None:
-    answer = types.InlineQueryResultArticle(id='1',
+    answer = types.InlineQueryResultArticle(id='0',
                                             title='Ничего не нашел',
                                             input_message_content=types.InputTextMessageContent('Не найдено'))
+    await query.answer([answer])
+
+
+async def send_price_error(query: types.InlineQuery) -> None:
+    answer = types.InlineQueryResultArticle(id='0',
+                                            title='Нижний порог выше верхнего',
+                                            input_message_content=types.InputTextMessageContent('Ошибка в цене'))
     await query.answer([answer])
 
 
 @rate_limit(1, key='inline')
 @dp.inline_handler()
 async def item_searching(query: types.InlineQuery):
-    items = await sync_to_async(ItemDB.objects.filter)(title__icontains=query.query, amount__gt=0)
-
+    title_description_icontains = Q(title__icontains=query.query.split('$')[0].strip()) |\
+                                  Q(description__icontains=query.query.split('$')[0].strip())
+    price = re.search(r"\$price(\d*), ?(\d*)", query.query)
+    if price:
+        low = price.group(1)
+        high = price.group(2)
+        low = 0 if not low else int(low)
+        high = 999999999 if not high else int(high)  # так как в модели 8 знаков
+        if low > high:
+            return await send_price_error(query)
+        items = await sync_to_async(ItemDB.objects.filter)(title_description_icontains,
+                                                           amount__gt=0,
+                                                           price__gte=low,
+                                                           price__lte=high)
+    else:
+        items = await sync_to_async(ItemDB.objects.filter)(title_description_icontains, amount__gt=0)
     if not items.exists():
         return await send_dummy_query(query)
 
