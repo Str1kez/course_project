@@ -1,16 +1,18 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from asgiref.sync import sync_to_async
+from django.core.paginator import Paginator
 from django.db.models import Count, Sum, Q
 
 from marketplace.models import Category, Item
 from bot.utils.misc.logging import error_logger
 from .callbacks import get_callback_data
-from .custom_buttons import get_back_button
+from .custom_buttons import get_back_button, prev_page_button, next_page_button
 
 
 async def category_keyboard():
     stage = 0
-    categories = await sync_to_async(Category.objects.alias(non_empty=Count('children')).filter)(non_empty__gt=0, level=0)
+    categories = await sync_to_async(Category.objects.alias(non_empty=Count('children')).filter)(non_empty__gt=0,
+                                                                                                 level=0)
 
     keyboard = InlineKeyboardMarkup()
     for cat in categories:
@@ -46,17 +48,25 @@ async def subcategory_keyboard(category_id: str):
     return keyboard
 
 
-async def items_keyboard(category_id: str):
+async def items_keyboard(category_id: str, page: str):
     stage = 2
+    row_width = 2
     category = await sync_to_async(Category.objects.get)(id=int(category_id))
     items = await sync_to_async(category.item_set.filter)(amount__gt=0)
 
-    keyboard = InlineKeyboardMarkup()
-    for item in items:
+    keyboard = InlineKeyboardMarkup(row_width=row_width)
+    p = Paginator(items, row_width * 4)
+    current_page = p.page(int(page))
+    for item in current_page.object_list:
         callback_data = get_callback_data(stage=stage + 1, category_id=category_id,
                                           item_id=str(item.id))
         keyboard.insert(InlineKeyboardButton(text=str(item), callback_data=callback_data))
-
+    pagination_buttons = []
+    if current_page.has_previous():
+        pagination_buttons.append(prev_page_button(stage, category_id, current_page))
+    if current_page.has_next():
+        pagination_buttons.append(next_page_button(stage, category_id, current_page))
+    keyboard.row(*pagination_buttons)
     keyboard.row(get_back_button(category=category, stage=stage))
 
     return keyboard

@@ -27,8 +27,8 @@ async def get_subcategories(call: types.CallbackQuery, category_id: str, **kwarg
     await call.message.edit_text(text='Выбери подкатегорию', reply_markup=keyboard)
 
 
-async def get_items(call: types.CallbackQuery, category_id: str, **kwargs):
-    keyboard = await inline_keyboard.items_keyboard(category_id)
+async def get_items(call: types.CallbackQuery, category_id: str, page: str, **kwargs):
+    keyboard = await inline_keyboard.items_keyboard(category_id, page)
     try:
         await call.message.edit_text(text='Выбери товар', reply_markup=keyboard)
     except MessageCantBeEdited:
@@ -58,6 +58,7 @@ async def all_queries_handler(call: types.CallbackQuery, callback_data: dict):
     stage = int(callback_data.get('stage'))
     category_id = callback_data.get('category_id')
     item_id = callback_data.get('item_id')
+    page = callback_data.get('page')
 
     func_list = [get_categories, get_subcategories, get_items, get_detailed_item]
 
@@ -65,4 +66,5 @@ async def all_queries_handler(call: types.CallbackQuery, callback_data: dict):
 
     await on_stage_func(call,
                         category_id=category_id,
-                        item_id=item_id)
+                        item_id=item_id,
+                        page=page)
