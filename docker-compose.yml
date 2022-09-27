@@ -1,6 +1,6 @@
 services:
   marketplace:
-    image: str1kez/marketplace_tg:latest
+    image: str1kez/marketplace_tg:dev
     build: .
     command: sh -c "python3 manage.py makemigrations marketplace; python3 manage.py migrate; python3 manage.py collectstatic --noinput; python3 manage.py createsuperuser --noinput --username $DJANGO_USERNAME --email lol@lol.ru; python3 app.py"
     ports:
