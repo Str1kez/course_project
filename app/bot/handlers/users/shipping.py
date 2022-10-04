@@ -7,6 +7,7 @@ from django.db import transaction, DatabaseError
 
 from marketplace.models import Item, TgUser, Order, ShippingOption as ShippingOptionDB
 from bot.loader import dp, bot
+from bot.utils.misc.logging import error_logger
 
 
 async def get_shipping_options():
@@ -35,7 +36,8 @@ def valid_item_amount(item_id: int):
                 item.save()
             else:
                 return False
-    except DatabaseError:
+    except DatabaseError as e:
+        error_logger.error(str(e))
         return False
     return True
 
@@ -69,7 +71,7 @@ async def make_payment(query: types.ShippingQuery):
         await bot.answer_pre_checkout_query(pre_checkout_query_id=query.id, ok=True)
     else:
         await bot.answer_pre_checkout_query(pre_checkout_query_id=query.id, ok=False,
-                                            error_message='Ошибка в транзакции')
+                                            error_message='Товара больше нет на складе')
 
     # 1111 1111 1111 1026, 12/22, CVC 000
 
